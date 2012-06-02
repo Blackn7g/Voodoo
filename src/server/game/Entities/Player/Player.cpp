@@ -3161,7 +3161,7 @@ void Player::InitStatsForLevel(bool reapplyMods)
     SetFloatValue(UNIT_MOD_CAST_SPEED, 1.0f);
 
     // reset size before reapply auras
-    SetFloatValue(OBJECT_FIELD_SCALE_X, 1.0f);
+    SetObjectScale(1.0f);
 
     // save base values (bonuses already included in stored stats
     for (uint8 i = STAT_STRENGTH; i < MAX_STATS; ++i)
@@ -10257,7 +10257,8 @@ uint32 Player::GetItemCount(uint32 item, bool inBankAlso, Item* skipItem) const
 
     if (inBankAlso)
     {
-        for (uint8 i = BANK_SLOT_ITEM_START; i < BANK_SLOT_ITEM_END; ++i)
+        // checking every item from 39 to 74 (including bank bags)
+        for (uint8 i = BANK_SLOT_ITEM_START; i < BANK_SLOT_BAG_END; ++i)
             if (Item* pItem = GetItemByPos(INVENTORY_SLOT_BAG_0, i))
                 if (pItem != skipItem && pItem->GetEntry() == item)
                     count += pItem->GetCount();
@@ -10297,7 +10298,7 @@ uint32 Player::GetItemCountWithLimitCategory(uint32 limitCategory, Item* skipIte
         if (Bag* pBag = GetBagByPos(i))
             count += pBag->GetItemCountWithLimitCategory(limitCategory, skipItem);
 
-    for (int i = BANK_SLOT_ITEM_START; i < BANK_SLOT_ITEM_END; ++i)
+    for (int i = BANK_SLOT_ITEM_START; i < BANK_SLOT_BAG_END; ++i)
         if (Item* pItem = GetItemByPos(INVENTORY_SLOT_BAG_0, i))
             if (pItem != skipItem)
                 if (ItemTemplate const* pProto = pItem->GetTemplate())
@@ -10323,7 +10324,7 @@ Item* Player::GetItemByGuid(uint64 guid) const
             if (pItem->GetGUID() == guid)
                 return pItem;
 
-    for (int i = BANK_SLOT_ITEM_START; i < BANK_SLOT_ITEM_END; ++i)
+    for (int i = BANK_SLOT_ITEM_START; i < BANK_SLOT_BAG_END; ++i)
         if (Item* pItem = GetItemByPos(INVENTORY_SLOT_BAG_0, i))
             if (pItem->GetGUID() == guid)
                 return pItem;
@@ -12284,11 +12285,6 @@ Item* Player::StoreNewItem(ItemPosCountVec const& dest, uint32 item, bool update
             pItem->SetItemRandomProperties(randomPropertyId);
         pItem = StoreItem(dest, pItem, update);
 
-        const ItemTemplate* proto = pItem->GetTemplate();
-        for (uint8 i = 0; i < MAX_ITEM_PROTO_SPELLS; ++i)
-            if (proto->Spells[i].SpellTrigger == ITEM_SPELLTRIGGER_ON_NO_DELAY_USE && proto->Spells[i].SpellId > 0) // On obtain trigger
-                CastSpell(this, proto->Spells[i].SpellId, true, pItem);
-
         if (allowedLooters.size() > 1 && pItem->GetTemplate()->GetMaxStackSize() == 1 && pItem->IsSoulBound())
         {
             pItem->SetSoulboundTradeable(allowedLooters);
@@ -12394,6 +12390,14 @@ Item* Player::_StoreItem(uint16 pos, Item* pItem, uint32 count, bool clone, bool
         AddEnchantmentDurations(pItem);
         AddItemDurations(pItem);
 
+
+        const ItemTemplate* proto = pItem->GetTemplate();
+        for (uint8 i = 0; i < MAX_ITEM_PROTO_SPELLS; ++i)
+            if (proto->Spells[i].SpellTrigger == ITEM_SPELLTRIGGER_ON_NO_DELAY_USE && proto->Spells[i].SpellId > 0) // On obtain trigger
+                if (bag == INVENTORY_SLOT_BAG_0 || (bag >= INVENTORY_SLOT_BAG_START && bag < INVENTORY_SLOT_BAG_END))
+                    if (!HasAura(proto->Spells[i].SpellId))
+                        CastSpell(this, proto->Spells[i].SpellId, true, pItem);
+
         return pItem;
     }
     else
@@ -12429,6 +12433,13 @@ Item* Player::_StoreItem(uint16 pos, Item* pItem, uint32 count, bool clone, bool
         AddEnchantmentDurations(pItem2);
 
         pItem2->SetState(ITEM_CHANGED, this);
+
+        const ItemTemplate* proto = pItem2->GetTemplate();
+        for (uint8 i = 0; i < MAX_ITEM_PROTO_SPELLS; ++i)
+            if (proto->Spells[i].SpellTrigger == ITEM_SPELLTRIGGER_ON_NO_DELAY_USE && proto->Spells[i].SpellId > 0) // On obtain trigger
+                if (bag == INVENTORY_SLOT_BAG_0 || (bag >= INVENTORY_SLOT_BAG_START && bag < INVENTORY_SLOT_BAG_END))
+                    if (!HasAura(proto->Spells[i].SpellId))
+                        CastSpell(this, proto->Spells[i].SpellId, true, pItem2);
 
         return pItem2;
     }
@@ -13758,7 +13769,7 @@ void Player::UpdateItemDuration(uint32 time, bool realtimeonly)
         Item* item = *itr;
         ++itr;                                              // current element can be erased in UpdateDuration
 
-        if ((realtimeonly && item->GetTemplate()->Duration < 0) || !realtimeonly)
+        if (!realtimeonly || item->GetTemplate()->FlagsCu & ITEM_FLAGS_CU_DURATION_REAL_TIME)
             item->UpdateDuration(this, time);
     }
 }

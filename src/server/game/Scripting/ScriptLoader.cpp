@@ -36,6 +36,8 @@ void AddSC_npc_mount();
 void AddSC_ArgentTournament();
 //Revenge od Dalaran squidrrel
 void AddSC_dalaran_squirrel();
+// Arena Spectator
+void AddSC_arena_spectator_script();
 
 // spells
 void AddSC_deathknight_spell_scripts();
@@ -1268,5 +1270,6 @@ void AddCustomScripts()
     AddSC_npc_mount();		
     AddSC_ArgentTournament();
     AddSC_dalaran_squirrel();
+    AddSC_arena_spectator_script();
 #endif
 }

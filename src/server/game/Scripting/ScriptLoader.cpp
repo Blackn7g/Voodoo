@@ -38,6 +38,8 @@ void AddSC_ArgentTournament();
 void AddSC_dalaran_squirrel();
 // Arena Spectator
 void AddSC_arena_spectator_script();
+// Transmogrify
+void AddSC_transmogrify_script();
 
 // spells
 void AddSC_deathknight_spell_scripts();
@@ -1271,5 +1273,6 @@ void AddCustomScripts()
     AddSC_ArgentTournament();
     AddSC_dalaran_squirrel();
     AddSC_arena_spectator_script();
+    AddSC_transmogrify_script();
 #endif
 }

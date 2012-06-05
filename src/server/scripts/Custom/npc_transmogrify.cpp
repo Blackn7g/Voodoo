@@ -29,7 +29,7 @@ enum TransmogrifyActions {
     ACTION_TRANSMOGRIFY_REMOVE_DISPLAY
 };
 
-const uint16 PriceInGold = 1000; // 1k golds
+const uint16 PriceInGold = 1000 * 100 * 100; // 1k golds
 
 class npc_transmogrify : public CreatureScript
 {
@@ -70,7 +70,7 @@ class npc_transmogrify : public CreatureScript
                 return;
             }
 
-            if (player->GetMoney() < PriceInGold * 100 * 100)
+            if (!player->HasEnoughMoney(PriceInGold))
             {
                 handler.PSendSysMessage("It costs %u gold!", PriceInGold);
                 return;
@@ -99,7 +99,7 @@ class npc_transmogrify : public CreatureScript
                     data << uint8(trItem->GetSlot());
                     player->GetSession()->HandleAutoEquipItemOpcode(data);
 
-                    player->ModifyMoney(-1 * PriceInGold * 100 * 100);
+                    player->ModifyMoney(-1 * PriceInGold);
                     creature->GetAI()->DoCast(63491);
 
                     break;
